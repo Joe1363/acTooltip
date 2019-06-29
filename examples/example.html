@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>acTooltip Example</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+  </head>
+
+  <body>
+    <div id="container">
+      <h1>acTooltip Example</h1>
+      <p><b>Options Tooltip</b></p>
+      <div id="alerts"></div>
+
+      <div class="demo_area">
+        <div class="d_header">Demo Article<span id="header_options">Options</span></div>
+        <div class="d_body">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut sit amet nisl ac lectus rutrum imperdiet ac in tortor. Donec fringilla at lectus hendrerit sollicitudin. Maecenas quis quam vel purus ultrices porttitor vel vitae diam. Nullam nec venenatis lacus, ut semper turpis. Sed nibh est, bibendum non libero a, mattis varius orci. Phasellus quis tincidunt enim. Aliquam dui ligula, molestie non libero efficitur, rhoncus efficitur leo. Sed porttitor, nulla eu feugiat dictum, quam eros malesuada mauris, quis hendrerit justo turpis id mi.</p>
+          <p>Aenean tristique ligula vitae aliquet lobortis. Proin scelerisque, risus ut consectetur euismod, metus ipsum efficitur tellus, vel fringilla orci felis a eros. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Nunc eu molestie eros. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. In blandit ullamcorper magna, eget lobortis ligula tincidunt eget. Vestibulum gravida suscipit nunc, gravida porta lorem iaculis in. Duis leo ligula, congue in ultrices ac, porttitor dictum elit. Cras nibh tortor, finibus id sapien at, mollis dignissim dolor. Integer pulvinar tortor quis quam tincidunt gravida. Quisque in interdum libero.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
+<style>
+  h1 { text-align: center; }
+  #container { width: 800px;  max-width: 100%;  margin: 0 auto; }
+  .area { border: 1px solid #000000; }
+  .d_header { background: #000000;  color: #ffffff;  padding: .5em 1em;  font-size: 1.5em;  font-weight: bold; }
+  .d_body { padding: .5em 1em;  background: #eaeaea; }
+  .d_body p { margin: 0 0 10px; }
+  #header_options { float: right;  font-size: 1rem;  text-decoration: underline;  display: inline-block;  padding: .5em 0;  cursor: pointer; }
+  #header_options:hover { color: #eaeaea; }
+  .tooltip { border: 2px solid #000000;  color: #000000;  background: #ffffff;  font-size: 1rem; }
+  .tooltip_header, .tooltip_list div { padding: .25rem .5rem; }
+  .tooltip_list div { padding: .25rem 1rem; font-weight: normal;  cursor: pointer;  border-top: 1px solid transparent;  border-bottom: 1px solid transparent; }
+  .tooltip_list div:hover { background: lightyellow;  border-color: #eaeaea; }
+  #alerts { text-align: center;  color: green;  font-weight: bold;  margin-bottom:.5em;  font-size: 1.2em; }
+</style>
+
+<script>
+  /* acTooltip (v1.0.0) - Copyright 2019 Joseph Cabral - Licensed under MIT
+     Docs: https://github.com/Joe1363/acTooltip
+  */
+  var acTooltip = {
+    open: function(id, options) {
+      var op = (typeof options == 'object');
+      var defaultErrorText = 'Unable to load content at this time.';
+      var defaultErrorTooltipStyle = 'border:1px solid #000000;background:#ffffff;min-width:240px;padding:5px;';
+      acTooltip.close(id);  // Make sure no other instance is open
+
+      if (id && op) {
+        var validAnchors = ['top-right', 'top-left', 'bottom-right', 'bottom-left'];
+        var anchor = ((options.hasOwnProperty('anchor') && (validAnchors.indexOf(options.anchor) != -1)) ? options.anchor : 'top-right' );
+        var anchorObj = {'top-right': 'top:0;right:0;', 'top-left': 'top:0;left:0;', 'bottom-right': 'bottom:0;right:0;', 'bottom-left': 'bottom:0;left:0;'};
+        var width = ((op && options.hasOwnProperty('width') && options.width) ? ('width:' + options.width) : ''); // Set width if present
+        var addClass = ((op && options.hasOwnProperty('addClass')) ? (' class="' + options.addClass + ' "')  : ''); // Set width if present
+        var relClass = "<style>.acttElement{position:relative;}</style>";  // Ensure parent div is position relative
+        var overlay = '<div id="acTooltipOverlay" onclick="acTooltip.close(\'' + id + '\');" style="width:100%;height:100%;top:0;right:0;bottom:0;left:0;position:fixed;z-index:998;"></div>';
+        var overlayClose = ((op && options.hasOwnProperty('overlayClose') && (typeof options.overlayClose == 'boolean') && (options.overlayClose == false)) ? '' : overlay);
+        $('#' + id).parent().addClass('acttElement').append(overlayClose);
+        $('#' + id).parent().addClass('acttElement').append('<div id="acTooltip"' + addClass + 'style="position:absolute;z-index:999;display:none;' + anchorObj[anchor] + width + '">' + relClass + '<div id="acTooltipContent"></div></div>');
+        showContent(op, options);
+      }
+
+      function showContent(op, options) {
+        if (op && (options.hasOwnProperty('content'))) {
+          if (typeof options.content == 'string') {  // Insert provided content
+            $('#acTooltipContent').html(options.content);
+            $('#acTooltip').slideDown('fast');
+          } else if (op && (typeof options.content == 'object') && (options.content.hasOwnProperty('url'))) {  // Load content from given url and insert
+            var data = ((options.content.hasOwnProperty('data')) ? options.content.data : {});
+            var type = ((options.content.hasOwnProperty('type')) ? options.content.type : "GET");  // Defaults to GET
+            var content = $.ajax({ type: type, dataType: 'json', url: options.content.url, data: data });
+            content.done(function(data){
+              $('#acTooltipContent').html(data.content);
+              $('#acTooltip').slideDown('fast');
+            });
+            content.fail(function(data){
+              var msg = ((data && data.hasOwnProperty('responseJSON') && data.responseJSON.hasOwnProperty('message')) ? data.responseJSON.message : '');
+              $('#acTooltipContent').html(getErrorMsg(op, options, msg));  $('#acTooltip').slideDown('fast');
+            });
+          }
+        } else {
+          getErrorMsg(op, options, '');  // Show error text if no content
+        }
+      }
+      function getErrorMsg(op, options, msg){
+        var text = (msg ? msg : ((op && (options.hasOwnProperty('errorText'))) ? options.errorText : defaultErrorText));
+        return '<div style="' + defaultErrorTooltipStyle + '">' + text + '</div>';
+      }
+    },
+    close: function(id) {
+      $('#acTooltipOverlay, #acTooltip').remove();
+      $('#' + id).parent().removeClass('acttElement');
+    }
+  };
+
+  /* Demo JS */
+  var content = '<div class="tooltip"><div class="tooltip_header"><b>Options</b></div><div class="tooltip_list"><div>Edit Article</div><div>View Stats</div><div>Other Options</div></div></div>';
+
+  $('#header_options').on('click', function() {
+    acTooltip.open('header_options', {width: 140, content: content} );
+  });
+
+  $('#container').on('click', '.tooltip_list div', function() {
+    acTooltip.close();
+    $('#alerts').text('Demo Action Triggered');
+    setTimeout(function(){ $('#alerts').text('');  }, 2000);
+  });
+</script>
